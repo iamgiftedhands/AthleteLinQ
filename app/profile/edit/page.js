@@ -11,13 +11,15 @@ const POSITIONS_BY_SPORT = {
   "Volleyball": ["Setter","Outside Hitter","Opposite Hitter","Middle Blocker","Libero"],
   "Handball": ["Goalkeeper","Left Wing","Right Wing","Left Back","Right Back","Centre Back","Pivot"],
 };
+const MAX_PHOTO_MB = 5;
 
 export default function EditProfile() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [athlete, setAthlete] = useState(null);
   const [academy, setAcademy] = useState(null);
-  const [msg, setMsg] = useState(null); // { type: "success" | "error", text }
+  const [photoFile, setPhotoFile] = useState(null);
+  const [msg, setMsg] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -41,11 +43,33 @@ export default function EditProfile() {
 
   async function save() {
     setMsg(null);
+
+    let photo_url = profile.photo_url;
+    if (photoFile) {
+      if (!photoFile.type.startsWith("image/"))
+        return setMsg({ type: "error", text: "Profile photo must be an image (JPG or PNG)." });
+      if (photoFile.size > MAX_PHOTO_MB * 1024 * 1024)
+        return setMsg({ type: "error", text: `Photo too large — max ${MAX_PHOTO_MB}MB.` });
+    }
+
     setSaving(true);
+
+    if (photoFile) {
+      const ext = photoFile.name.split(".").pop().toLowerCase();
+      const path = `${profile.id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, photoFile);
+      if (upErr) {
+        setSaving(false);
+        return setMsg({ type: "error", text: "Photo upload failed: " + upErr.message });
+      }
+      photo_url = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+    }
+
     const { error: e1 } = await supabase.from("profiles").update({
       full_name: profile.full_name,
       state: profile.state,
       phone: profile.phone,
+      photo_url,
     }).eq("id", profile.id);
 
     let e2 = null;
@@ -69,6 +93,8 @@ export default function EditProfile() {
     }
     setSaving(false);
     if (e1 || e2) return setMsg({ type: "error", text: (e1 || e2).message });
+    setProfile({ ...profile, photo_url });
+    setPhotoFile(null);
     setMsg({ type: "success", text: "Profile saved." });
   }
 
@@ -80,6 +106,25 @@ export default function EditProfile() {
         <span className="badge">{profile.role}</span>
         <h1 style={{ marginTop: 10 }}>Edit profile</h1>
         <p className="sub">This is what coaches, scouts and supporters will see.</p>
+
+        <label>Profile photo</label>
+        <div className="avatar-row">
+          {profile.photo_url ? (
+            <img src={profile.photo_url} alt="Profile photo" className="avatar-lg" />
+          ) : (
+            <div className="avatar-lg avatar-empty">
+              {(profile.full_name || "?").charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div style={{ flex: 1 }}>
+            <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} />
+            <small className="hint">
+              {profile.role === "academy"
+                ? "Your club badge or a team photo. JPG/PNG, max 5MB."
+                : "A clear photo of your face. JPG/PNG, max 5MB."}
+            </small>
+          </div>
+        </div>
 
         <label>Full name</label>
         <input value={profile.full_name || ""} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} />

@@ -16,6 +16,7 @@ export default function RootLayout({ children }) {
               <img src="/logo.png" alt="AthleteLinQ" className="brand-logo" />
             </Link>
             <div>
+              <Link href="/athletes">Discover</Link>
               <Link href="/login">Sign in</Link>
               <Link href="/signup">Join</Link>
             </div>

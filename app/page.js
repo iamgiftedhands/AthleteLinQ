@@ -12,7 +12,10 @@ export default function Home() {
             academies and scouts who can change their story, through verified
             profiles you can trust.
           </p>
-          <Link href="/signup"><button className="btn">Create your profile</button></Link>
+          <div className="hero-actions">
+            <Link href="/signup"><button className="btn">Create your profile</button></Link>
+            <Link href="/athletes"><button className="btn btn-outline">Browse athletes</button></Link>
+          </div>
         </div>
       </div>
 
