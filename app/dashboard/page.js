@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 
 const ROLE_INTRO = {
-  athlete: "Complete your profile so coaches and scouts can find you. Video uploads arrive in the next release.",
+  athlete: "Complete your profile, then upload highlight videos so coaches and scouts can see you play.",
   coach: "Complete your profile. Athlete verification tools arrive in the next release.",
   academy: "Complete your academy profile. Roster management arrives in the next release.",
   scout: "Complete your profile. Advanced athlete search arrives in the next release.",
@@ -46,7 +46,10 @@ export default function Dashboard() {
         <span className="badge">{profile.role}</span>
         <h1 style={{ marginTop: 10 }}>Hi, {profile.full_name}</h1>
         <p className="sub">{ROLE_INTRO[profile.role]}</p>
-        <Link href="/profile/edit"><button className="btn">Edit my profile</button></Link>
+        {profile.role === "athlete" && (
+          <Link href="/videos"><button className="btn">My videos</button></Link>
+        )}
+        <Link href="/profile/edit"><button className={profile.role === "athlete" ? "btn btn-secondary" : "btn"}>Edit my profile</button></Link>
         <button className="btn btn-secondary" onClick={signOut}>Sign out</button>
       </div>
     </div>
